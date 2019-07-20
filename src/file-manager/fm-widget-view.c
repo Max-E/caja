@@ -42,6 +42,7 @@ struct _FMWidgetView
 {
   FMDirectoryView object;
   int             number_of_files;
+  CajaWidgetViewProvider *provider;
 };
 
 static GList *fm_widget_view_get_selection                   (FMDirectoryView   *view);
@@ -66,6 +67,7 @@ fm_widget_view_add_file (FMDirectoryView *view, CajaFile *file, CajaDirectory *d
     icon = caja_file_get_icon_surface (file, caja_get_icon_size_for_zoom_level (CAJA_ZOOM_LEVEL_STANDARD),
                                       TRUE, gtk_widget_get_scale_factor (GTK_WIDGET(view)), 0);
 
+    debug_print("%s\n",caja_file_get_uri(file));
     elaps = g_timer_elapsed (timer, NULL);
     g_timer_stop (timer);
 
@@ -79,6 +81,54 @@ fm_widget_view_add_file (FMDirectoryView *view, CajaFile *file, CajaDirectory *d
 static void
 fm_widget_view_begin_loading (FMDirectoryView *view)
 {
+    debug_print("hi");
+    GtkWindow *window;
+    CajaFile *file;
+    gchar *uri;
+    GList *providers, *l;
+    char *mimetype;
+    GtkWidget *widget;
+    FMWidgetView *widget_view;
+
+    widget_view = FM_WIDGET_VIEW (view);
+
+    uri = fm_directory_view_get_uri (view);
+    file = caja_file_get_by_uri (uri);
+    mimetype = caja_file_get_mime_type (file);
+
+    providers = caja_extensions_get_for_type (CAJA_TYPE_WIDGET_VIEW_PROVIDER);
+    for (l = providers; l != NULL; l = l->next)
+    {
+        CajaWidgetViewProvider *provider;
+
+        provider = CAJA_WIDGET_VIEW_PROVIDER (l->data);
+        if (caja_widget_view_provider_supports_uri (provider, uri,
+                    caja_file_get_file_type (file),
+                    mimetype)) {
+            widget_view->provider = provider;
+            break;
+        }
+    }
+
+    caja_module_extension_list_free (providers);
+
+    if (widget_view->provider == NULL) {
+    debug_print();
+        return;
+    }
+    debug_print();
+
+    caja_widget_view_provider_set_uri (widget_view->provider, uri);
+
+    widget = caja_widget_view_provider_get_widget (widget_view->provider);
+    gtk_container_add (GTK_CONTAINER(widget_view), widget);
+
+    window = fm_directory_view_get_containing_window (view);
+    caja_widget_view_provider_set_window (widget_view->provider, window);
+
+    g_print("uri in widget_view = %s, window=%p\n", uri, window);
+
+    g_free (mimetype);
 }
 
 static void
@@ -243,6 +293,7 @@ static void
 fm_widget_view_end_loading (FMDirectoryView *view,
                            gboolean all_files_seen)
 {
+    debug_print("all_files_seen=%d\n", all_files_seen);
 }
 
 static void
@@ -270,6 +321,7 @@ static void
 fm_widget_view_scroll_to_file (CajaView *view,
                               const char *uri)
 {
+    debug_print("uri=%s\n", uri);
 }
 
 static void
@@ -286,6 +338,7 @@ fm_widget_view_sort_directories_first_changed (FMDirectoryView *view)
 static void
 fm_widget_view_class_init (FMWidgetViewClass *class)
 {
+    debug_print("hi");
     FMDirectoryViewClass *fm_directory_view_class;
 
     fm_directory_view_class = FM_DIRECTORY_VIEW_CLASS (class);
@@ -334,6 +387,7 @@ fm_widget_view_get_id (CajaView *view)
 static void
 fm_widget_view_iface_init (CajaViewIface *iface)
 {
+    debug_print("hi");
     fm_directory_view_init_view_iface (iface);
 
     iface->get_view_id = fm_widget_view_get_id;
@@ -347,13 +401,22 @@ fm_widget_view_iface_init (CajaViewIface *iface)
 static void
 fm_widget_view_init (FMWidgetView *widget_view)
 {
-    GtkWindow *window;
-    window = fm_directory_view_get_containing_window (FM_DIRECTORY_VIEW(widget_view));
+    debug_print("hi");
+    GtkWidget *widget;
+
+    widget = gtk_app_chooser_widget_new ("text/plain");
+    gtk_app_chooser_widget_set_show_all (GTK_APP_CHOOSER_WIDGET(widget), TRUE);
+
+    gtk_container_add (GTK_CONTAINER(widget_view), widget);
+    gtk_widget_show(widget);
+
+    widget_view->provider = NULL;
 }
 
 static CajaView *
 fm_widget_view_create (CajaWindowSlotInfo *slot)
 {
+    debug_print("hi");
     FMWidgetView *view;
     g_assert (CAJA_IS_WINDOW_SLOT_INFO (slot));
 
@@ -369,6 +432,9 @@ fm_widget_view_supports_uri (const char *uri,
                             GFileType file_type,
                             const char *mime_type)
 {
+    debug_print("uri=%s\n", uri);
+    if (g_str_has_prefix(uri, "applications://"))
+        return TRUE;
     GList *providers, *l;
     gboolean result = FALSE;
 
@@ -379,7 +445,7 @@ fm_widget_view_supports_uri (const char *uri,
         CajaWidgetViewProvider *provider;
 
         provider = CAJA_WIDGET_VIEW_PROVIDER (l->data);
-        if (caja_widget_view_supports_uri (provider, uri, file_type, mime_type)) {
+        if (caja_widget_view_provider_supports_uri (provider, uri, file_type, mime_type)) {
             result = TRUE;
         }
     }
