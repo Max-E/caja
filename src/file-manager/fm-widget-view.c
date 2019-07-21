@@ -34,14 +34,15 @@
 #include <libcaja-private/caja-view-factory.h>
 #include <libcaja-private/caja-extensions.h>
 #include <libcaja-private/caja-module.h>
+#include <libcaja-private/caja-metadata.h>
 #include <libcaja-extension/caja-widget-view-provider.h>
 
 #include "fm-widget-view.h"
 
 struct _FMWidgetView
 {
-  FMDirectoryView object;
-  int             number_of_files;
+  FMDirectoryView         object;
+  int                     number_of_files;
   CajaWidgetViewProvider *provider;
 };
 
@@ -51,11 +52,12 @@ static void   fm_widget_view_scroll_to_file                  (CajaView *view, co
 static void   fm_widget_view_iface_init                      (CajaViewIface *iface);
 
 G_DEFINE_TYPE_WITH_CODE (FMWidgetView, fm_widget_view, FM_TYPE_DIRECTORY_VIEW,
-                G_IMPLEMENT_INTERFACE (CAJA_TYPE_VIEW, fm_widget_view_iface_init));
+                         G_IMPLEMENT_INTERFACE (CAJA_TYPE_VIEW, fm_widget_view_iface_init));
 
 static void
 fm_widget_view_add_file (FMDirectoryView *view, CajaFile *file, CajaDirectory *directory)
 {
+    CajaFile *file_dir;
     static GTimer *timer = NULL;
     static gdouble cumu = 0, elaps;
     FM_WIDGET_VIEW (view)->number_of_files++;
@@ -65,9 +67,8 @@ fm_widget_view_add_file (FMDirectoryView *view, CajaFile *file, CajaDirectory *d
 
     g_timer_start (timer);
     icon = caja_file_get_icon_surface (file, caja_get_icon_size_for_zoom_level (CAJA_ZOOM_LEVEL_STANDARD),
-                                      TRUE, gtk_widget_get_scale_factor (GTK_WIDGET(view)), 0);
+                                       TRUE, gtk_widget_get_scale_factor (GTK_WIDGET(view)), 0);
 
-    debug_print("%s\n",caja_file_get_uri(file));
     elaps = g_timer_elapsed (timer, NULL);
     g_timer_stop (timer);
 
@@ -75,13 +76,18 @@ fm_widget_view_add_file (FMDirectoryView *view, CajaFile *file, CajaDirectory *d
 
     cumu += elaps;
     g_message ("entire loading: %.3f, cumulative %.3f", elaps, cumu);
+
+    FMWidgetView *widget_view;
+
+    widget_view = FM_WIDGET_VIEW (view);
+    file_dir = caja_directory_get_corresponding_file (directory);
+    caja_widget_view_provider_add_file (widget_view->provider, file, file_dir);
 }
 
 
 static void
 fm_widget_view_begin_loading (FMDirectoryView *view)
 {
-    debug_print("hi");
     GtkWindow *window;
     CajaFile *file;
     gchar *uri;
@@ -103,8 +109,8 @@ fm_widget_view_begin_loading (FMDirectoryView *view)
 
         provider = CAJA_WIDGET_VIEW_PROVIDER (l->data);
         if (caja_widget_view_provider_supports_uri (provider, uri,
-                    caja_file_get_file_type (file),
-                    mimetype)) {
+                                                    caja_file_get_file_type (file),
+                                                    mimetype)) {
             widget_view->provider = provider;
             break;
         }
@@ -113,12 +119,10 @@ fm_widget_view_begin_loading (FMDirectoryView *view)
     caja_module_extension_list_free (providers);
 
     if (widget_view->provider == NULL) {
-    debug_print();
         return;
     }
-    debug_print();
 
-    caja_widget_view_provider_set_uri (widget_view->provider, uri);
+    caja_widget_view_provider_set_location (widget_view->provider, uri);
 
     widget = caja_widget_view_provider_get_widget (widget_view->provider);
     gtk_container_add (GTK_CONTAINER(widget_view), widget);
@@ -233,7 +237,7 @@ fm_widget_view_get_zoom_level (FMDirectoryView *view)
 
 static void
 fm_widget_view_zoom_to_level (FMDirectoryView *view,
-                             CajaZoomLevel zoom_level)
+                              CajaZoomLevel zoom_level)
 {
 }
 
@@ -256,8 +260,8 @@ fm_widget_view_can_zoom_out (FMDirectoryView *view)
 
 static void
 fm_widget_view_start_renaming_file (FMDirectoryView *view,
-                                   CajaFile *file,
-                                   gboolean select_all)
+                                    CajaFile *file,
+                                    gboolean select_all)
 {
 }
 
@@ -293,7 +297,6 @@ static void
 fm_widget_view_end_loading (FMDirectoryView *view,
                            gboolean all_files_seen)
 {
-    debug_print("all_files_seen=%d\n", all_files_seen);
 }
 
 static void
@@ -314,6 +317,8 @@ fm_widget_view_emblems_changed (FMDirectoryView *directory_view)
 static char *
 fm_widget_view_get_first_visible_file (CajaView *view)
 {
+    //FIXME: return string to tell caja we are ready.
+    return g_strdup("file:///tmp/a.txt");
     return NULL;
 }
 
@@ -321,7 +326,6 @@ static void
 fm_widget_view_scroll_to_file (CajaView *view,
                               const char *uri)
 {
-    debug_print("uri=%s\n", uri);
 }
 
 static void
@@ -338,7 +342,6 @@ fm_widget_view_sort_directories_first_changed (FMDirectoryView *view)
 static void
 fm_widget_view_class_init (FMWidgetViewClass *class)
 {
-    debug_print("hi");
     FMDirectoryViewClass *fm_directory_view_class;
 
     fm_directory_view_class = FM_DIRECTORY_VIEW_CLASS (class);
@@ -387,7 +390,6 @@ fm_widget_view_get_id (CajaView *view)
 static void
 fm_widget_view_iface_init (CajaViewIface *iface)
 {
-    debug_print("hi");
     fm_directory_view_init_view_iface (iface);
 
     iface->get_view_id = fm_widget_view_get_id;
@@ -401,14 +403,13 @@ fm_widget_view_iface_init (CajaViewIface *iface)
 static void
 fm_widget_view_init (FMWidgetView *widget_view)
 {
-    debug_print("hi");
-    GtkWidget *widget;
+    //GtkWidget *widget;
 
-    widget = gtk_app_chooser_widget_new ("text/plain");
-    gtk_app_chooser_widget_set_show_all (GTK_APP_CHOOSER_WIDGET(widget), TRUE);
+    //widget = gtk_app_chooser_widget_new ("text/plain");
+    //gtk_app_chooser_widget_set_show_all (GTK_APP_CHOOSER_WIDGET(widget), TRUE);
 
-    gtk_container_add (GTK_CONTAINER(widget_view), widget);
-    gtk_widget_show(widget);
+    //gtk_container_add (GTK_CONTAINER(widget_view), widget);
+    //gtk_widget_show(widget);
 
     widget_view->provider = NULL;
 }
@@ -416,7 +417,6 @@ fm_widget_view_init (FMWidgetView *widget_view)
 static CajaView *
 fm_widget_view_create (CajaWindowSlotInfo *slot)
 {
-    debug_print("hi");
     FMWidgetView *view;
     g_assert (CAJA_IS_WINDOW_SLOT_INFO (slot));
 
@@ -432,9 +432,6 @@ fm_widget_view_supports_uri (const char *uri,
                             GFileType file_type,
                             const char *mime_type)
 {
-    debug_print("uri=%s\n", uri);
-    if (g_str_has_prefix(uri, "applications://"))
-        return TRUE;
     GList *providers, *l;
     gboolean result = FALSE;
 
@@ -446,10 +443,15 @@ fm_widget_view_supports_uri (const char *uri,
 
         provider = CAJA_WIDGET_VIEW_PROVIDER (l->data);
         if (caja_widget_view_provider_supports_uri (provider, uri, file_type, mime_type)) {
+            //CajaFile *file;
+            //file = caja_file_get_by_uri (uri);
+            //caja_file_set_metadata (file, CAJA_METADATA_KEY_DEFAULT_VIEW, NULL, FM_WIDGET_VIEW_ID);
+            //caja_file_unref (file);
             result = TRUE;
         }
     }
     caja_module_extension_list_free (providers);
+
     return result;
 }
 
@@ -457,7 +459,6 @@ static CajaViewInfo fm_widget_view =
 {
     .id = FM_WIDGET_VIEW_ID,
     .view_combo_label = N_("Widget View"),
-    /* translators: this is used in the view menu */
     .view_menu_label_with_mnemonic = N_("_Widget View"),
     .error_label = N_("The widget view encountered an error."),
     .startup_error_label = N_("The widget view encountered an error while starting up."),
@@ -476,6 +477,5 @@ fm_widget_view_register (void)
     fm_widget_view.startup_error_label = _(fm_widget_view.startup_error_label);
     fm_widget_view.display_location_label = _(fm_widget_view.display_location_label);
     fm_widget_view.single_view = TRUE;
-
     caja_view_factory_register (&fm_widget_view);
 }

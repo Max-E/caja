@@ -54,8 +54,8 @@ struct _CajaWidgetViewProviderIface {
                                GFileType file_type,
                                const char *mime_type);
     GtkWidget* (*get_widget)   (CajaWidgetViewProvider *provider);
-    void       (*add_file)     (CajaWidgetViewProvider *provider, CajaFile *file);
-    void       (*set_uri)      (CajaWidgetViewProvider *provider, const char *uri);
+    void       (*add_file)     (CajaWidgetViewProvider *provider, CajaFile *file, CajaFile *directory);
+    void       (*set_location) (CajaWidgetViewProvider *provider, const char *location);
     void       (*set_window)   (CajaWidgetViewProvider *provider, GtkWindow *window);
 };
 
@@ -64,9 +64,10 @@ GType      caja_widget_view_provider_get_type     (void);
 
 GtkWidget *caja_widget_view_provider_get_widget   (CajaWidgetViewProvider *provider);
 void       caja_widget_view_provider_add_file     (CajaWidgetViewProvider *provider,
-                                                   CajaFile *file);
-void       caja_widget_view_provider_set_uri      (CajaWidgetViewProvider *provider,
-                                                   const char *uri);
+                                                   CajaFile *file,
+                                                   CajaFile *directory);
+void       caja_widget_view_provider_set_location (CajaWidgetViewProvider *provider,
+                                                   const char *location);
 void       caja_widget_view_provider_set_window   (CajaWidgetViewProvider *provider,
                                                    GtkWindow *window);
 gboolean   caja_widget_view_provider_supports_uri (CajaWidgetViewProvider *provider,

@@ -859,9 +859,7 @@ static gboolean
 report_callback (CajaWindowSlot *slot,
                  GError *error)
 {
-    debug_print();
     if (slot->open_callback != NULL) {
-        debug_print();
         slot->open_callback (slot->pane->window, error, slot->open_callback_user_data);
         slot->open_callback = NULL;
         slot->open_callback_user_data = NULL;
@@ -869,7 +867,6 @@ report_callback (CajaWindowSlot *slot,
         return TRUE;
     }
 
-    debug_print();
     return FALSE;
 }
 
@@ -1243,7 +1240,6 @@ got_file_info_for_view_selection_callback (CajaFile *file,
     if (error == NULL ||
             (error->domain == G_IO_ERROR && error->code == G_IO_ERROR_NOT_SUPPORTED))
     {
-        debug_print();
         char *mimetype;
 
         /* We got the information we need, now pick what view to use: */
@@ -1253,7 +1249,6 @@ got_file_info_for_view_selection_callback (CajaFile *file,
         /* If fallback, don't use view from metadata */
         if (slot->location_change_type != CAJA_LOCATION_CHANGE_FALLBACK)
         {
-            debug_print();
             /* Look in metadata for view */
             view_id = caja_file_get_metadata
                       (file, CAJA_METADATA_KEY_DEFAULT_VIEW, NULL);
@@ -1268,31 +1263,9 @@ got_file_info_for_view_selection_callback (CajaFile *file,
             }
         }
 
-        debug_print();
-        if (view_id == NULL)
-        {
-            debug_print();
-            gchar *uri;
-            GList *lst;
-            uri = g_file_get_uri (location);
-            lst = caja_view_factory_get_views_for_uri (uri,
-                    caja_file_get_file_type (file),
-                    mimetype);
-            g_free(uri);
-            if (g_list_length(lst) > 0) {
-                debug_print();
-                view_id = g_strdup(lst->data);
-                g_clear_error(&error);
-            }
-            g_list_free_full(lst, g_free);
-            debug_print();
-        }
-
-        debug_print();
         /* Otherwise, use default */
         if (view_id == NULL)
         {
-            debug_print();
             view_id = caja_global_preferences_get_default_folder_viewer_preference_as_iid ();
 
             if (view_id != NULL &&
@@ -1301,38 +1274,29 @@ got_file_info_for_view_selection_callback (CajaFile *file,
                             caja_file_get_file_type (file),
                             mimetype))
             {
-                debug_print();
                 g_free (view_id);
                 view_id = NULL;
             }
         }
 
-        debug_print();
         g_free (mimetype);
     }
 
-    debug_print("view_id=%s\n", view_id);
     if (view_id != NULL)
     {
-        debug_print("view_id=%s\n", view_id);
         if (!gtk_widget_get_visible (GTK_WIDGET (window)) && CAJA_IS_SPATIAL_WINDOW (window))
         {
-            debug_print("view_id=%s\n", view_id);
             /* We now have the metadata to set up the window position, etc */
             setup_new_spatial_window (slot, file);
         }
         create_content_view (slot, view_id);
         g_free (view_id);
 
-        debug_print("view_id=%s\n", view_id);
         report_callback (slot, NULL);
-        debug_print("view_id=%s\n", view_id);
     }
     else
     {
-        debug_print("view_id=%s\n", view_id);
         if (!report_callback (slot, error)) {
-            debug_print("view_id=%s\n", view_id);
             display_view_selection_failure (window, file,
                                             location, error);
         }

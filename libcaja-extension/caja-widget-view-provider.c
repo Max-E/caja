@@ -70,12 +70,10 @@ caja_widget_view_provider_get_type (void)
 /**
  * caja_widget_view_provider_get_widget:
  * @provider: a #CajaWidgetViewProvider
- * @uri: the URI of the location
- * @window: parent #GtkWindow
  *
- * Returns: (transfer none): the widget view for @provider at @uri
- */
-
+ *
+ * Returns:
+ **/
 GtkWidget *
 caja_widget_view_provider_get_widget (CajaWidgetViewProvider *provider)
 {
@@ -85,22 +83,44 @@ caja_widget_view_provider_get_widget (CajaWidgetViewProvider *provider)
     return CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->get_widget (provider);
 }
 
-void caja_widget_view_provider_add_file (CajaWidgetViewProvider *provider, CajaFile *file)
+/**
+ * caja_widget_view_provider_add_file:
+ * @provider: a #CajaWidgetViewProvider
+ * @file: 
+ * @directory: 
+ *
+ *
+ **/
+void caja_widget_view_provider_add_file (CajaWidgetViewProvider *provider, CajaFile *file, CajaFile *directory)
 {
     g_return_if_fail (CAJA_IS_WIDGET_VIEW_PROVIDER (provider));
     g_return_if_fail (CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->add_file != NULL);
 
-    CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->add_file (provider, file);
+    CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->add_file (provider, file, directory);
 }
 
-void caja_widget_view_provider_set_uri (CajaWidgetViewProvider *provider, const char *uri)
+/**
+ * caja_widget_view_provider_set_location:
+ * @provider: a #CajaWidgetViewProvider
+ * @uri: the URI of the location
+ *
+ *
+ **/
+void caja_widget_view_provider_set_location (CajaWidgetViewProvider *provider, const char *location)
 {
     g_return_if_fail (CAJA_IS_WIDGET_VIEW_PROVIDER (provider));
-    g_return_if_fail (CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->set_uri != NULL);
+    g_return_if_fail (CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->set_location != NULL);
 
-    CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->set_uri (provider, uri);
+    CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->set_location (provider, location);
 }
 
+/**
+ * caja_widget_view_provider_set_window:
+ * @provider: a #CajaWidgetViewProvider
+ * @window: parent #GtkWindow
+ *
+ *
+ **/
 void caja_widget_view_provider_set_window (CajaWidgetViewProvider *provider, GtkWindow *window)
 {
     g_return_if_fail (CAJA_IS_WIDGET_VIEW_PROVIDER (provider));
@@ -110,10 +130,21 @@ void caja_widget_view_provider_set_window (CajaWidgetViewProvider *provider, Gtk
 }
 
 
+/**
+ * caja_widget_view_provider_supports_uri:
+ * @provider: a #CajaWidgetViewProvider
+ * @uri:
+ * @file_type:
+ * @mime_type:
+ *
+ *
+ *
+ * Return value:
+ **/
 gboolean caja_widget_view_provider_supports_uri (CajaWidgetViewProvider *provider,
-                                        const char *uri,
-                                        GFileType file_type,
-                                        const char *mime_type)
+                                                 const char *uri,
+                                                 GFileType file_type,
+                                                 const char *mime_type)
 {
     g_return_val_if_fail (CAJA_IS_WIDGET_VIEW_PROVIDER (provider), FALSE);
     g_return_val_if_fail (CAJA_WIDGET_VIEW_PROVIDER_GET_IFACE (provider)->supports_uri!= NULL, FALSE);
