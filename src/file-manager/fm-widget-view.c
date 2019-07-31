@@ -98,16 +98,17 @@ fm_widget_view_begin_loading (FMDirectoryView *view)
             break;
         }
     }
-    g_free (uri);
     caja_file_unref (file);
     g_free (mimetype);
     caja_module_extension_list_free (providers);
 
     if (widget_view->provider == NULL) {
+        g_free (uri);
         return;
     }
 
     caja_widget_view_provider_set_location (widget_view->provider, uri);
+    g_free (uri);
 
     widget = caja_widget_view_provider_get_widget (widget_view->provider);
     gtk_container_add (GTK_CONTAINER(widget_view), widget);
@@ -296,10 +297,6 @@ fm_widget_view_end_loading (FMDirectoryView *view,
 static void
 fm_widget_view_finalize (GObject *object)
 {
-    FMWidgetView *widget_view;
-
-    widget_view = FM_WIDGET_VIEW (object);
-
     G_OBJECT_CLASS (fm_widget_view_parent_class)->finalize (object);
 }
 
@@ -455,7 +452,6 @@ static CajaViewInfo fm_widget_view =
 void
 fm_widget_view_register (void)
 {
-    fm_widget_view.id = fm_widget_view.id;
     fm_widget_view.view_combo_label = _(fm_widget_view.view_combo_label);
     fm_widget_view.view_menu_label_with_mnemonic = _(fm_widget_view.view_menu_label_with_mnemonic);
     fm_widget_view.error_label = _(fm_widget_view.error_label);
