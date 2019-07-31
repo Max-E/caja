@@ -64,6 +64,7 @@ src/file-manager/fm-list-view.c
 src/file-manager/fm-properties-window.c
 src/file-manager/fm-tree-model.c
 src/file-manager/fm-tree-view.c
+src/file-manager/fm-widget-view.c
 src/file-manager/caja-desktop-icon-view-ui.xml
 src/file-manager/caja-directory-view-ui.xml
 src/file-manager/caja-icon-view-ui.xml
