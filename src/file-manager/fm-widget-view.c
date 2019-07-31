@@ -107,7 +107,6 @@ fm_widget_view_begin_loading (FMDirectoryView *view)
         return;
     }
 
-    debug_print("begin loading");
     caja_widget_view_provider_set_location (widget_view->provider, uri);
 
     widget = caja_widget_view_provider_get_widget (widget_view->provider);
